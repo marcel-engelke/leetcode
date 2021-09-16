@@ -7,41 +7,71 @@ struct ListNode {
 	struct ListNode *next;
 };
 
-int read_num(struct ListNode *node, int n, int pw)
+// Add and init child, return pointer to child
+struct ListNode *addchild(struct ListNode *node)
 {
-	n += node->val * pow(10, pw);
-	if (node->next != NULL) {
-		return read_num(node->next, n, ++pw);
-	}
-	return n;
+	node->next = (struct ListNode*) malloc(sizeof(struct ListNode));
+	node->next->next = NULL;
+	node->next->val = 0;
+	return node->next;
 }
 
-struct ListNode *make_list(int n)
+// Add n to sum->val, return carryover
+int add(struct ListNode *sum, int n)
 {
-	struct ListNode *node = (struct ListNode*) malloc(sizeof(struct ListNode));
-	node->val = n % 10;
-	if ((n -= node->val)) {
-		node->next = make_list(n / 10);
-	} else {
-		node->next = NULL;
+	int co;
+	sum->val += n;
+	co = sum->val / 10;
+	sum->val %= 10;
+	return co;
+}
+
+// Add n to sum->val
+void addnum(struct ListNode *sum, int n)
+{
+	int co;
+	if ((co = add(sum, n))) {
+		addnum(addchild(sum), co);
 	}
-	return node;
+}
+
+// Add a->val + n to sum->val
+void add1node(struct ListNode *sum, struct ListNode *a, int n)
+{
+	int co;
+	n += a->val;
+	co = add(sum, n);
+	if (a->next != NULL) {
+		add1node(addchild(sum), a->next, co);
+	} else if (co) {
+		addnum(addchild(sum), co);
+	}
+}
+
+// Add a->val + b->val + n to sum->val
+void add2node(struct ListNode *sum, struct ListNode *a, struct ListNode *b, int n)
+{
+	int co;
+	n += (a->val + b->val);
+	co = add(sum, n);
+	if (a->next != NULL) {
+		if (b->next != NULL) {
+			add2node(addchild(sum), a->next, b->next, co);
+		} else {
+			add1node(addchild(sum), a->next, co);
+		}
+	} else if (b->next != NULL) {
+		add1node(addchild(sum), b->next, co);
+	} else if (co) {
+		addnum(addchild(sum), co);
+	}
 }
 
 struct ListNode *addTwoNumbers(struct ListNode *a, struct ListNode *b)
 {
-	return make_list(read_num(a, 0, 0) + read_num(b, 0, 0));
-}
-
-int main()
-{
-	struct ListNode *a = make_list(342);
-	printf("a:%d ", read_num(a, 0, 0));
-	struct ListNode *b = make_list(465);
-	printf("b:%d ", read_num(b, 0, 0));
-	struct ListNode *sum = addTwoNumbers(a, b);
-	printf("sum:%d\n", read_num(sum, 0, 0));
-	free(a);
-	free(b);
-	free(sum);
+	struct ListNode *sum = (struct ListNode*) malloc(sizeof(struct ListNode));
+	sum->next = NULL;
+	sum->val = 0;
+	add2node(sum, a, b, 0);
+	return sum;
 }
